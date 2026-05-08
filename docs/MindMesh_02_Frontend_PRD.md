@@ -1,6 +1,6 @@
 # 🧠 MindMesh — Frontend PRD
 **Next.js 15 Web Application — Hackathon Edition**  
-**Version:** 1.0 · May 2026 · Owner: Suprathik
+**Version:** 1.0 · May 2026 · Owner: Suprathik , Sri Charan
 
 ---
 

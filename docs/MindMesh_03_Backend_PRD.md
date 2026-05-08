@@ -1,23 +1,24 @@
 # 🧠 MindMesh — Backend PRD
+
 **API & Data Layer — Hackathon Edition**  
-**Version:** 1.0 · May 2026 · Owner: Suprathik (routes/DB) + AI Engineer (Syntra/ElevenLabs)
+**Version:** 1.0 · May 2026 · Owner: Suprathik (routes/DB) + Sri Charan (Syntra/ElevenLabs)
 
 ---
 
 ## 1. Tech Stack
 
-| Layer | Technology | Rationale |
-|-------|-----------|-----------|
-| Runtime | Node.js 20 + TypeScript | Consistency with frontend |
-| Framework | Express 5 | Minimal, API-first, familiar |
-| ORM | Prisma | Type-safe queries; fast schema iteration |
-| Database | PostgreSQL (Neon) | Managed serverless Postgres; free tier |
-| Auth | NextAuth.js (shared secret) | JWT verification; no custom auth logic |
-| AI | Syntra API | Therapy conversation engine (AI Engineer owns) |
-| TTS | ElevenLabs API | Voice output — warm, persona-matched voices |
-| STT | OpenAI Whisper (if shipped) | Speech-to-text for voice input |
-| Deployment | Render | Free tier; env var management |
-| Logging | Pino | Structured JSON logs |
+| Layer      | Technology                  | Rationale                                      |
+| ---------- | --------------------------- | ---------------------------------------------- |
+| Runtime    | Node.js 20 + TypeScript     | Consistency with frontend                      |
+| Framework  | Express 5                   | Minimal, API-first, familiar                   |
+| ORM        | Prisma                      | Type-safe queries; fast schema iteration       |
+| Database   | PostgreSQL (Neon)           | Managed serverless Postgres; free tier         |
+| Auth       | NextAuth.js (shared secret) | JWT verification; no custom auth logic         |
+| AI         | Syntra API                  | Therapy conversation engine (AI Engineer owns) |
+| TTS        | ElevenLabs API              | Voice output — warm, persona-matched voices    |
+| STT        | OpenAI Whisper (if shipped) | Speech-to-text for voice input                 |
+| Deployment | Render                      | Free tier; env var management                  |
+| Logging    | Pino                        | Structured JSON logs                           |
 
 ---
 
@@ -25,37 +26,37 @@
 
 ### Users
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | Auto-generated |
-| googleId | VARCHAR UNIQUE | From Google OAuth |
-| email | VARCHAR UNIQUE | |
-| name | VARCHAR | |
-| avatarUrl | VARCHAR | Google profile photo |
-| persona | ENUM | CALM \| WARM \| DIRECT |
-| createdAt | TIMESTAMP | |
+| Column    | Type           | Notes                  |
+| --------- | -------------- | ---------------------- |
+| id        | UUID PK        | Auto-generated         |
+| googleId  | VARCHAR UNIQUE | From Google OAuth      |
+| email     | VARCHAR UNIQUE |                        |
+| name      | VARCHAR        |                        |
+| avatarUrl | VARCHAR        | Google profile photo   |
+| persona   | ENUM           | CALM \| WARM \| DIRECT |
+| createdAt | TIMESTAMP      |                        |
 
 ### Sessions
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | |
-| userId | UUID FK → Users | |
-| persona | ENUM | Persona used in this session |
-| moodScore | INT | 1–10 from check-in |
-| moodTags | TEXT[] | Emotion tags from check-in |
-| startedAt | TIMESTAMP | |
-| endedAt | TIMESTAMP NULL | NULL if in progress |
+| Column    | Type            | Notes                        |
+| --------- | --------------- | ---------------------------- |
+| id        | UUID PK         |                              |
+| userId    | UUID FK → Users |                              |
+| persona   | ENUM            | Persona used in this session |
+| moodScore | INT             | 1–10 from check-in           |
+| moodTags  | TEXT[]          | Emotion tags from check-in   |
+| startedAt | TIMESTAMP       |                              |
+| endedAt   | TIMESTAMP NULL  | NULL if in progress          |
 
 ### Messages
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | |
-| sessionId | UUID FK → Sessions | |
-| role | ENUM | USER \| ASSISTANT |
-| content | TEXT | Plain text — no encryption in hackathon scope |
-| createdAt | TIMESTAMP | |
+| Column    | Type               | Notes                                         |
+| --------- | ------------------ | --------------------------------------------- |
+| id        | UUID PK            |                                               |
+| sessionId | UUID FK → Sessions |                                               |
+| role      | ENUM               | USER \| ASSISTANT                             |
+| content   | TEXT               | Plain text — no encryption in hackathon scope |
+| createdAt | TIMESTAMP          |                                               |
 
 > **Note:** Encryption is cut for hackathon scope. Add AES-256-GCM post-hackathon before any real user data is stored.
 
@@ -65,34 +66,34 @@
 
 ### Auth
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/me` | Returns current user profile |
-| PATCH | `/api/auth/persona` | Update user's selected persona |
+| Method | Endpoint            | Description                    |
+| ------ | ------------------- | ------------------------------ |
+| GET    | `/api/auth/me`      | Returns current user profile   |
+| PATCH  | `/api/auth/persona` | Update user's selected persona |
 
 ### Sessions
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/session/start` | Creates session with moodScore + moodTags; returns sessionId |
-| POST | `/api/session/message` | Sends user message; streams Syntra response back |
-| POST | `/api/session/audio` | Sends AI response text; returns ElevenLabs audio URL |
-| POST | `/api/session/:id/end` | Closes session; sets endedAt |
-| GET | `/api/session` | Lists all sessions for current user |
-| GET | `/api/session/:id/messages` | Returns full message transcript |
+| Method | Endpoint                    | Description                                                  |
+| ------ | --------------------------- | ------------------------------------------------------------ |
+| POST   | `/api/session/start`        | Creates session with moodScore + moodTags; returns sessionId |
+| POST   | `/api/session/message`      | Sends user message; streams Syntra response back             |
+| POST   | `/api/session/audio`        | Sends AI response text; returns ElevenLabs audio URL         |
+| POST   | `/api/session/:id/end`      | Closes session; sets endedAt                                 |
+| GET    | `/api/session`              | Lists all sessions for current user                          |
+| GET    | `/api/session/:id/messages` | Returns full message transcript                              |
 
 ### Mood
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/mood` | Save mood check-in (score + tags) for today |
-| GET | `/api/mood/today` | Check if today's check-in exists |
+| Method | Endpoint          | Description                                 |
+| ------ | ----------------- | ------------------------------------------- |
+| POST   | `/api/mood`       | Save mood check-in (score + tags) for today |
+| GET    | `/api/mood/today` | Check if today's check-in exists            |
 
 ### Voice (STT — only if shipped)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/voice/transcribe` | Accepts audio blob; returns transcribed text via Whisper |
+| Method | Endpoint                | Description                                              |
+| ------ | ----------------------- | -------------------------------------------------------- |
+| POST   | `/api/voice/transcribe` | Accepts audio blob; returns transcribed text via Whisper |
 
 ---
 
@@ -101,6 +102,7 @@
 This is the agreed shape of data at every boundary. Both sides build to this independently.
 
 ### Start Session
+
 ```
 POST /api/session/start
 Body:  { moodScore: number, moodTags: string[] }
@@ -108,6 +110,7 @@ Returns: { sessionId: string }
 ```
 
 ### Send Message (Streaming)
+
 ```
 POST /api/session/message
 Body:  { sessionId: string, message: string, persona: "CALM" | "WARM" | "DIRECT" }
@@ -116,6 +119,7 @@ Returns: text/event-stream
 ```
 
 ### Get Audio
+
 ```
 POST /api/session/audio
 Body:  { text: string, persona: "CALM" | "WARM" | "DIRECT" }
@@ -123,6 +127,7 @@ Returns: { audioUrl: string }
 ```
 
 ### Transcribe Voice (if shipped)
+
 ```
 POST /api/voice/transcribe
 Body:  FormData { audio: Blob }
@@ -144,13 +149,14 @@ Returns: { transcript: string }
 
 ### Persona System Prompts
 
-| Persona | System Prompt Tone Instruction |
-|---------|-------------------------------|
-| CALM | "Speak slowly and gently. Use short sentences. Prioritize validation over advice. Begin with reflection before offering any coping suggestions." |
-| WARM | "Be warm, encouraging, and celebratory of small wins. Use affirming language. Balance emotional support with gentle forward momentum." |
-| DIRECT | "Be clear and concise. Skip extended reflection. Offer concrete coping steps quickly. Respect the user's time and intelligence." |
+| Persona | System Prompt Tone Instruction                                                                                                                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CALM    | "Speak slowly and gently. Use short sentences. Prioritize validation over advice. Begin with reflection before offering any coping suggestions." |
+| WARM    | "Be warm, encouraging, and celebratory of small wins. Use affirming language. Balance emotional support with gentle forward momentum."           |
+| DIRECT  | "Be clear and concise. Skip extended reflection. Offer concrete coping steps quickly. Respect the user's time and intelligence."                 |
 
 ### Safety Guardrails (injected into every prompt)
+
 ```
 You are an AI mental health companion, not a licensed therapist.
 Never diagnose a condition. Never recommend or discuss medication.
@@ -167,11 +173,11 @@ Then gently continue the conversation.
 - Called after every complete AI response (not during streaming).
 - Voice model selected per persona for tone matching:
 
-| Persona | ElevenLabs Voice | Character |
-|---------|-----------------|-----------|
-| CALM | `Rachel` or equivalent | Soft, slow, meditative |
-| WARM | `Bella` or equivalent | Warm, friendly, gentle |
-| DIRECT | `Adam` or equivalent | Clear, confident, measured |
+| Persona | ElevenLabs Voice       | Character                  |
+| ------- | ---------------------- | -------------------------- |
+| CALM    | `Rachel` or equivalent | Soft, slow, meditative     |
+| WARM    | `Bella` or equivalent  | Warm, friendly, gentle     |
+| DIRECT  | `Adam` or equivalent   | Clear, confident, measured |
 
 - Audio URL returned to frontend; frontend handles playback.
 - If ElevenLabs fails: return `{ audioUrl: null }` — frontend silently skips audio.
@@ -181,19 +187,20 @@ Then gently continue the conversation.
 
 ## 7. Error Handling
 
-| Error | HTTP Status | Behaviour |
-|-------|------------|-----------|
-| Unauthenticated | 401 | Redirect to `/auth/signin` |
-| Invalid sessionId | 404 | Return error; frontend shows toast |
-| Syntra timeout | 504 | Return error; frontend shows retry button |
-| ElevenLabs failure | 200 with `audioUrl: null` | Silent fallback — text still shown |
-| Rate limit | 429 | Return error with `retryAfter` seconds |
+| Error              | HTTP Status               | Behaviour                                 |
+| ------------------ | ------------------------- | ----------------------------------------- |
+| Unauthenticated    | 401                       | Redirect to `/auth/signin`                |
+| Invalid sessionId  | 404                       | Return error; frontend shows toast        |
+| Syntra timeout     | 504                       | Return error; frontend shows retry button |
+| ElevenLabs failure | 200 with `audioUrl: null` | Silent fallback — text still shown        |
+| Rate limit         | 429                       | Return error with `retryAfter` seconds    |
 
 ---
 
 ## 8. Folder Structure
 
 ### `apps/api` (Express)
+
 ```
 src/
   routes/
