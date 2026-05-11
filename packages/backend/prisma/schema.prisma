@@ -20,7 +20,7 @@ enum Persona {
 
 enum MessageRole {
   USER
-  ASSISTANT
+  AI
 }
 
 model User {

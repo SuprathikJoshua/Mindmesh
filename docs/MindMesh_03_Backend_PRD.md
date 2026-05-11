@@ -51,10 +51,10 @@
 ### Messages
 
 | Column    | Type               | Notes                                         |
-| --------- | ------------------ | --------------------------------------------- |
+| --------- | ------------------ | --------------------------------------------- | --- | --- |
 | id        | UUID PK            |                                               |
 | sessionId | UUID FK → Sessions |                                               |
-| role      | ENUM               | USER \| ASSISTANT                             |
+| role      | ENUM               | USER                                          |     | AI  |
 | content   | TEXT               | Plain text — no encryption in hackathon scope |
 | createdAt | TIMESTAMP          |                                               |
 
