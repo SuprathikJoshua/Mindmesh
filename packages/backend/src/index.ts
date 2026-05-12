@@ -17,14 +17,14 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(helmet());
 app.use(express.json({ limit: "50kb" }));
 
-app.get("/api/health", (req, res) => {
+app.get("/api/v1/health", (req, res) => {
 	res.json({ db: "ok", llm: "ok" });
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
-app.use("/api/sessions", verifyJWT, sessionRoutes);
-app.use("/api/mood", verifyJWT, moodRoutes);
+app.use("/api/v1/sessions", verifyJWT, sessionRoutes);
+app.use("/api/v1/mood", verifyJWT, moodRoutes);
 
 app.use(globalErrorHandler);
 
