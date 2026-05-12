@@ -25,7 +25,7 @@ enum MessageRole {
 
 model User {
   id        String    @id @default(uuid())
-  googleId  String    @unique
+  supabaseId  String    @unique
   email     String    @unique
   name      String
   avatarUrl String?
