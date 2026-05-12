@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { getMoodHistory } from "../controllers/mood.controller";
+import { getMoodHistoryHandler } from "../controllers/mood.controller";
 
 const router = Router();
 
-router.get("/history", getMoodHistory);
+router.get("/history", getMoodHistoryHandler);
 
 export default router;

@@ -8,13 +8,6 @@ export interface MessageItem {
 	createdAt: Date;
 }
 
-export interface SendMessageResult {
-	userMessage: MessageItem;
-	assistantMessage: MessageItem;
-}
-
-const MAX_CONTEXT_MESSAGES = 20;
-
 export async function getMessagesBySessionId(id: string, userId: string) {
 	const session = await prisma.session.findUnique({
 		where: { id, userId },
@@ -52,15 +45,6 @@ export async function sendMessageToSession(
 			data: { title: content.slice(0, 60) },
 		});
 	}
-
-	await prisma.message.findMany({
-		where: { sessionId: id },
-		orderBy: { createdAt: "asc" },
-		select: { role: true, content: true },
-	});
-
-	// Context window capped at 20 messages — ready for LLM integration
-	// const _contextWindow = history.slice(-MAX_CONTEXT_MESSAGES);
 
 	// AI response placeholder — replace with real LLM call
 	const aiResponse = "AI_RESPONSE_PLACEHOLDER";
