@@ -12,6 +12,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum SessionStatus {
+  ACTIVE
+  ENDED
+}
+
 enum Persona {
   CALM
   WARM
@@ -24,28 +29,30 @@ enum MessageRole {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  supabaseId  String    @unique
-  email     String    @unique
+  id        String   @id @default(uuid())
+  supabaseId String   @unique
+  email     String   @unique
   name      String
   avatarUrl String?
-  persona   Persona   @default(CALM)
-  createdAt DateTime  @default(now())
+  persona   Persona  @default(CALM)
+  createdAt DateTime @default(now())
 
-  sessions  Session[]
+  sessions     Session[]
+  moodCheckins MoodCheckin[]
 }
 
 model Session {
-  id         String    @id @default(uuid())
+  id         String        @id @default(uuid())
   userId     String
-  user       User      @relation(fields: [userId], references: [id])
-  persona    Persona
-  moodScore  Int
-  moodTags   String[]
-  startedAt  DateTime  @default(now())
+  user       User          @relation(fields: [userId], references: [id])
+  title      String?
+  status     SessionStatus @default(ACTIVE)
+  summary    String?
+  startedAt  DateTime      @default(now())
   endedAt    DateTime?
 
-  messages   Message[]
+  messages    Message[]
+  moodCheckin MoodCheckin?
 }
 
 model Message {
@@ -55,4 +62,15 @@ model Message {
   role      MessageRole
   content   String
   createdAt DateTime    @default(now())
+}
+
+model MoodCheckin {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  sessionId String   @unique
+  session   Session  @relation(fields: [sessionId], references: [id])
+  score     Int
+  note      String?
+  createdAt DateTime @default(now())
 }

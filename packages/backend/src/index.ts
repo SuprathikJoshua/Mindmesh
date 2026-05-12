@@ -4,9 +4,8 @@ import cors from "cors";
 import helmet from "helmet";
 
 import authRoutes from "./routes/auth.routes";
-// import sessionRoutes from "./routes/session.routes";
-// import messageRoutes from "./routes/message.routes";
-// import moodRoutes from "./routes/mood.routes";
+import sessionRoutes from "./routes/session.routes";
+import moodRoutes from "./routes/mood.routes";
 
 import { verifyJWT } from "./middleware/auth.middleware";
 import { globalErrorHandler } from "./middleware/error.middleware";
@@ -24,8 +23,8 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 
-// app.use("/api/sessions", verifyJWT, sessionRoutes);
-// app.use("/api/mood", verifyJWT, moodRoutes);
+app.use("/api/sessions", verifyJWT, sessionRoutes);
+app.use("/api/mood", verifyJWT, moodRoutes);
 
 app.use(globalErrorHandler);
 
