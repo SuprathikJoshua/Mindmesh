@@ -1,32 +1,11 @@
 import type { Request, Response } from "express";
-import { getGoogleAuthUrl, handleOAuthCallback, logoutUser, getUserById } from "../services/auth.service";
+import { getUserById, syncUserService } from "../services/auth.service";
 import asyncHandler from "../utils/asynchandlers";
 import ApiResponse from "../utils/ApiResponse";
-
-export const googleAuth = asyncHandler(async (_req: Request, res: Response) => {
-	const url = await getGoogleAuthUrl();
-	res.redirect(url);
-});
-
-export const callback = asyncHandler(async (req: Request, res: Response) => {
-	const code = req.query.code as string;
-	if (!code) throw new Error("Authorization code missing");
-	const result = await handleOAuthCallback(code);
-	res.json(
-		new ApiResponse(200, {
-			token: result.token,
-			user: {
-				id: result.user.id,
-				email: result.user.email,
-				name: result.user.name,
-				avatarUrl: result.user.avatarUrl,
-			},
-		}).data,
-	);
-});
+import ApiError from "../utils/ApiError";
 
 export const logout = asyncHandler(async (_req: Request, res: Response) => {
-	await logoutUser();
+	// Supabase client SDK manages sign-out on the frontend.
 	res.json(new ApiResponse(200, { success: true }, "Logged out").data);
 });
 
@@ -41,4 +20,11 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 			createdAt: user.createdAt,
 		}).data,
 	);
+});
+export const syncUser = asyncHandler(async (req: Request, res: Response) => {
+	const token = req.header("Authorization")?.replace("Bearer ", "");
+	if (!token) throw new ApiError(401, "No token");
+
+	const user = await syncUserService(token);
+	res.json(new ApiResponse(200, user).data);
 });
