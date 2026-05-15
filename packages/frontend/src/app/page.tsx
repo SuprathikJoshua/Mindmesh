@@ -1,13 +1,19 @@
 "use client";
 
+import { syncAuth } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { Brain, Smile, MessageSquare, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
-	const handleGoogle = () => {
-		// Trigger Google OAuth — replace with your Supabase / Google OAuth URL
-		window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
-	};
+	const router = useRouter();
 
+	const loginWithGoogle = async () => {
+		await supabase.auth.signInWithOAuth({
+			provider: "google",
+			options: { redirectTo: `${window.location.origin}/auth/callback` },
+		});
+	};
 	return (
 		<main className="min-h-screen bg-mm-bg flex flex-col items-center justify-center px-6 text-center">
 			{/* Logo */}
@@ -28,7 +34,7 @@ export default function LandingPage() {
 
 			{/* Headline */}
 			<h1
-				className="text-[34px] font-bold leading-[1.18] tracking-tight max-w-[440px] mb-4"
+				className="text-[34px] font-bold leading-[1.18] tracking-tight max-w-110 mb-4"
 				style={{ fontFamily: "var(--font-playfair)", color: "#E8EAF0" }}
 			>
 				A calm space to think things through
@@ -44,7 +50,7 @@ export default function LandingPage() {
 
 			{/* CTA */}
 			<button
-				onClick={handleGoogle}
+				onClick={() => loginWithGoogle()}
 				className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold mb-9 transition-opacity hover:opacity-90 cursor-pointer border-0"
 				style={{ background: "#E8EAF0", color: "#090E1C" }}
 			>
@@ -72,7 +78,10 @@ export default function LandingPage() {
 			{/* Pills */}
 			<div className="flex gap-2.5 flex-wrap justify-center">
 				{[
-					{ icon: <Smile size={13} color="#C4927A" />, label: "Mood tracking" },
+					{
+						icon: <Smile size={13} color="#C4927A" />,
+						label: "Mood tracking",
+					},
 					{
 						icon: <MessageSquare size={13} color="#7C9E8F" />,
 						label: "AI-guided sessions",
