@@ -30,12 +30,22 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		(async () => {
+			const token = localStorage.getItem("mm_token");
+			if (!token) {
+				console.log("[Dashboard] No mm_token, redirecting to /");
+				router.push("/");
+				setLoading(false);
+				return;
+			}
+
 			try {
 				const [u, s] = await Promise.all([getMe(), getSessions()]);
 				setUser(u);
 				setSessions(s);
-			} catch {
-				router.push("/");
+			} catch (err) {
+				console.log("[Dashboard] getMe/getSessions error:", err);
+				// Don't redirect on 401 - token might be invalid but we should let user try again
+				// Only redirect if there's no token (handled above)
 			} finally {
 				setLoading(false);
 			}
@@ -199,7 +209,7 @@ export default function DashboardPage() {
 							}}
 						>
 							<div
-								className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+								className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
 								style={{ background: `${sessionAccent(i)}1A` }}
 							>
 								<MessageSquare size={14} color={sessionAccent(i)} />

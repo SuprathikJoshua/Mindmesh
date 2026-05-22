@@ -26,5 +26,5 @@ export const syncUser = asyncHandler(async (req: Request, res: Response) => {
 	if (!token) throw new ApiError(401, "No token");
 
 	const user = await syncUserService(token);
-	res.json(new ApiResponse(200, user).data);
+	res.json(new ApiResponse(200, { token, user }).data);
 });

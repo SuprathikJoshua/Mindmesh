@@ -7,7 +7,14 @@ function getToken(): string | null {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const token = getToken();
-	const res = await fetch(`${BASE}${path}`, {
+	const url = `${BASE}${path}`;
+	console.log("[API] request:", options.method ?? "GET", url);
+	console.log("[API] headers:", {
+		"Content-Type": "application/json",
+		...(token ? { Authorization: `Bearer ${token}` } : {}),
+		...(options.headers ?? {}),
+	});
+	const res = await fetch(url, {
 		...options,
 		headers: {
 			"Content-Type": "application/json",
@@ -17,8 +24,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	});
 	if (!res.ok) {
 		const err = await res.text();
+		console.log("[API] request failed:", res.status, err);
 		throw new Error(err || `HTTP ${res.status}`);
 	}
+	console.log("[API] request success:", res.status);
 	return res.json() as Promise<T>;
 }
 
@@ -31,7 +40,7 @@ export interface User {
 	avatarUrl?: string;
 }
 
-export async function syncAuth(
+export async function syncUser(
 	googleToken: string,
 ): Promise<{ token: string; user: User }> {
 	return request("/auth/sync", {
@@ -43,7 +52,12 @@ export async function syncAuth(
 }
 
 export async function getMe(): Promise<User> {
-	return request("/auth/me");
+	return request("/auth/me", {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
+	});
 }
 
 // Sessions
@@ -65,19 +79,38 @@ export async function createSession(
 	return request("/sessions", {
 		method: "POST",
 		body: JSON.stringify({ mood, moodNote }),
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
 	});
 }
 
 export async function getSessions(): Promise<Session[]> {
-	return request("/sessions");
+	const data: { sessions: Session[] } = await request("/sessions", {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
+	});
+	return data.sessions;
 }
 
 export async function getSession(id: string): Promise<Session> {
-	return request(`/sessions/${id}`);
+	return request(`/sessions/${id}`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
+	});
 }
 
 export async function endSession(id: string): Promise<Session> {
-	return request(`/sessions/${id}/end`, { method: "POST" });
+	return request(`/sessions/${id}/end`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
+	});
 }
 
 // Messages
@@ -96,6 +129,9 @@ export async function sendMessage(
 	return request(`/sessions/${sessionId}/messages`, {
 		method: "POST",
 		body: JSON.stringify({ content }),
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
 	});
 }
 
@@ -109,5 +145,10 @@ export interface MoodEntry {
 }
 
 export async function getMoodHistory(): Promise<MoodEntry[]> {
-	return request("/mood/history");
+	return request("/mood/history", {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${getToken()}`,
+		},
+	});
 }

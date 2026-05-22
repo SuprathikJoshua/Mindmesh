@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brain } from "lucide-react";
-import { syncAuth } from "@/lib/api";
+import { syncUser } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 const STEPS = [
 	"Syncing your account...",
@@ -14,6 +15,7 @@ const STEPS = [
 export default function AuthCallbackPage() {
 	const router = useRouter();
 	const [step, setStep] = useState(0);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const run = async () => {
@@ -25,16 +27,25 @@ export default function AuthCallbackPage() {
 				new URLSearchParams(window.location.search).get("code") ??
 				"";
 
+			console.log("[AuthCallback] URL hash:", hash);
+			console.log(
+				"[AuthCallback] Extracted token:",
+				accessToken ? "present" : "missing",
+			);
+
 			if (!accessToken) {
-				router.push("/");
+				console.log("[AuthCallback] No token in URL, checking session...");
+				// Token might be in session instead - let the onAuthStateChange handle it
 				return;
 			}
 
 			try {
+				console.log("[AuthCallback] Calling syncUser with URL token...");
 				// Step 1
 				setStep(0);
-				const { token } = await syncAuth(accessToken);
-				localStorage.setItem("mm_token", token);
+				const result = await syncUser(accessToken);
+				console.log("[AuthCallback] syncUser success:", result);
+				localStorage.setItem("mm_token", result.token);
 
 				// Step 2
 				setStep(1);
@@ -45,7 +56,9 @@ export default function AuthCallbackPage() {
 				await new Promise((r) => setTimeout(r, 600));
 
 				router.push("/dashboard");
-			} catch {
+			} catch (err) {
+				console.error("[AuthCallback] syncUser failed:", err);
+				setError(err instanceof Error ? err.message : "User sync failed");
 				router.push("/");
 			}
 		};
@@ -53,6 +66,27 @@ export default function AuthCallbackPage() {
 		run();
 	}, [router]);
 
+	useEffect(() => {
+		const {
+			data: { subscription },
+		} = supabase.auth.onAuthStateChange(async (event, session) => {
+			console.log("[AuthCallback] Auth event:", event);
+			console.log("[AuthCallback] Session:", session ? "present" : "none");
+
+			if (event === "SIGNED_IN" && session?.access_token) {
+				console.log("[AuthCallback] Calling syncUser from session...");
+				try {
+					const result = await syncUser(session.access_token);
+					console.log("[AuthCallback] syncUser from session success:", result);
+					localStorage.setItem("mm_token", result.token);
+					router.push("/dashboard");
+				} catch (err) {
+					console.error("[AuthCallback] syncUser from session error:", err);
+				}
+			}
+		});
+		return () => subscription.unsubscribe();
+	}, [router]);
 	const pct = ((step + 1) / STEPS.length) * 100;
 
 	return (
