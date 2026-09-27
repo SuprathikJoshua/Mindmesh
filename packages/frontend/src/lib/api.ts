@@ -1,5 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 function getToken(): string | null {
 	if (typeof window === "undefined") return null;
 	return localStorage.getItem("mm_token");
@@ -8,12 +8,7 @@ function getToken(): string | null {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const token = getToken();
 	const url = `${BASE}${path}`;
-	console.log("[API] request:", options.method ?? "GET", url);
-	console.log("[API] headers:", {
-		"Content-Type": "application/json",
-		...(token ? { Authorization: `Bearer ${token}` } : {}),
-		...(options.headers ?? {}),
-	});
+	console.log(url);
 	const res = await fetch(url, {
 		...options,
 		headers: {
@@ -23,12 +18,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 		},
 	});
 	if (!res.ok) {
-		const err = await res.text();
-		console.log("[API] request failed:", res.status, err);
-		throw new Error(err || `HTTP ${res.status}`);
+		const body = await res.json().catch(() => null);
+		throw new Error(body?.message ?? body?.data?.message ?? `HTTP ${res.status}`);
 	}
-	console.log("[API] request success:", res.status);
-	return res.json() as Promise<T>;
+	const body = await res.json();
+	return (body?.data ?? body) as T;
 }
 
 // Auth
@@ -60,29 +54,36 @@ export async function getMe(): Promise<User> {
 	});
 }
 
+export async function logout(): Promise<void> {
+	await request("/auth/logout", { method: "POST" });
+	localStorage.removeItem("mm_token");
+}
+
 // Sessions
 
 export interface Session {
 	id: string;
-	title: string;
-	mood: number;
-	moodNote?: string;
-	durationMinutes?: number;
-	createdAt: string;
-	endedAt?: string;
+	title: string | null;
+	status: "ACTIVE" | "ENDED";
+	summary: string | null;
+	startedAt: string;
+	endedAt: string | null;
+	moodCheckin: { score: number; note?: string | null } | null;
+	messages?: Message[];
 }
 
 export async function createSession(
-	mood: number,
+	moodScore: number,
 	moodNote?: string,
 ): Promise<Session> {
-	return request("/sessions", {
+	const data: { session: Session } = await request("/sessions", {
 		method: "POST",
-		body: JSON.stringify({ mood, moodNote }),
+		body: JSON.stringify({ moodScore, moodNote }),
 		headers: {
 			Authorization: `Bearer ${getToken()}`,
 		},
 	});
+	return data.session;
 }
 
 export async function getSessions(): Promise<Session[]> {
@@ -96,21 +97,29 @@ export async function getSessions(): Promise<Session[]> {
 }
 
 export async function getSession(id: string): Promise<Session> {
-	return request(`/sessions/${id}`, {
+	const data: { session: Omit<Session, "messages"> & { messages?: Array<Omit<Message, "role"> & { role: "USER" | "ASSISTANT" }> } } = await request(`/sessions/${id}`, {
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${getToken()}`,
 		},
 	});
+	return {
+		...data.session,
+		messages: data.session.messages?.map((message) => ({
+			...message,
+			role: message.role === "USER" ? "user" : "assistant",
+		})),
+	};
 }
 
 export async function endSession(id: string): Promise<Session> {
-	return request(`/sessions/${id}/end`, {
+	const data: { session: Session } = await request(`/sessions/${id}/end`, {
 		method: "POST",
 		headers: {
 			Authorization: `Bearer ${getToken()}`,
 		},
 	});
+	return data.session;
 }
 
 // Messages
@@ -125,7 +134,7 @@ export interface Message {
 export async function sendMessage(
 	sessionId: string,
 	content: string,
-): Promise<Message> {
+): Promise<{ userMessage: Message; assistantMessage: Message }> {
 	return request(`/sessions/${sessionId}/messages`, {
 		method: "POST",
 		body: JSON.stringify({ content }),
@@ -139,16 +148,18 @@ export async function sendMessage(
 
 export interface MoodEntry {
 	id: string;
-	mood: number;
-	note?: string;
+	score: number;
+	note?: string | null;
 	createdAt: string;
+	sessionId: string;
 }
 
 export async function getMoodHistory(): Promise<MoodEntry[]> {
-	return request("/mood/history", {
+	const data: { checkins: MoodEntry[] } = await request("/mood/history", {
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${getToken()}`,
 		},
 	});
+	return data.checkins;
 }

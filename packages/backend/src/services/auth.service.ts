@@ -2,9 +2,9 @@ import { prisma } from "../lib/prisma";
 import { supabase } from "../lib/supabase";
 import ApiError from "../utils/ApiError";
 
-export async function logoutUser(): Promise<void> {
-	// JWT verification handles auth on protected routes.
-	// Supabase client SDK manages sign-out on the frontend.
+export async function logoutUser(token: string): Promise<void> {
+	const { error } = await supabase.auth.admin.signOut(token);
+	if (error) throw new ApiError(500, "LOGOUT_FAILED");
 }
 
 export async function getUserById(userId: string) {

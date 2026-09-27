@@ -9,7 +9,10 @@ import {
 	Smile,
 	Settings,
 	Brain,
+	LogOut,
 } from "lucide-react";
+import { logout } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 const NAV = [
 	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,6 +28,7 @@ interface Props {
 
 export default function Sidebar({ user }: Props) {
 	const path = usePathname();
+	const router = useRouter();
 
 	const initials = user?.name
 		? user.name
@@ -99,6 +103,14 @@ export default function Sidebar({ user }: Props) {
 					</p>
 					<p className="text-[10px] text-mm-muted">Free plan</p>
 				</div>
+				<button
+					type="button"
+					onClick={async () => { await logout(); router.push("/"); }}
+					aria-label="Sign out"
+					className="text-mm-muted hover:text-mm-text"
+				>
+					<LogOut size={14} />
+				</button>
 			</div>
 		</aside>
 	);

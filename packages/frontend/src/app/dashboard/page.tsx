@@ -6,10 +6,9 @@ import Link from "next/link";
 import { BarChart, Bar, Cell, ResponsiveContainer } from "recharts";
 import { ChevronRight, MessageSquare, Plus } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
-import { getMe, getSessions, User, Session } from "@/lib/api";
+import { getMe, getSessions, getMoodHistory, User, Session, MoodEntry } from "@/lib/api";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
-const MOCK_BARS = [3, 4, 3, 5, 2, 4, 4]; // replace with real mood history
 
 function moodColor(v: number) {
 	if (v >= 4) return "#7C9E8F";
@@ -27,6 +26,7 @@ export default function DashboardPage() {
 	const [user, setUser] = useState<User | null>(null);
 	const [sessions, setSessions] = useState<Session[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [moods, setMoods] = useState<MoodEntry[]>([]);
 
 	useEffect(() => {
 		(async () => {
@@ -39,9 +39,10 @@ export default function DashboardPage() {
 			}
 
 			try {
-				const [u, s] = await Promise.all([getMe(), getSessions()]);
+				const [u, s, moodHistory] = await Promise.all([getMe(), getSessions(), getMoodHistory()]);
 				setUser(u);
 				setSessions(s);
+				setMoods(moodHistory);
 			} catch (err) {
 				console.log("[Dashboard] getMe/getSessions error:", err);
 				// Don't redirect on 401 - token might be invalid but we should let user try again
@@ -52,10 +53,8 @@ export default function DashboardPage() {
 		})();
 	}, [router]);
 
-	const avgMood = sessions.length
-		? (
-				sessions.reduce((s, x) => s + (x.mood ?? 0), 0) / sessions.length
-			).toFixed(1)
+	const avgMood = moods.length
+		? (moods.reduce((total, mood) => total + mood.score, 0) / moods.length).toFixed(1)
 		: "—";
 
 	if (loading) {
@@ -66,7 +65,7 @@ export default function DashboardPage() {
 		);
 	}
 
-	const barData = WEEK.map((day, i) => ({ day, mood: MOCK_BARS[i] }));
+	const barData = WEEK.map((day, i) => ({ day, mood: moods[moods.length - 7 + i]?.score ?? 0 }));
 
 	return (
 		<div className="min-h-screen bg-mm-bg flex">
@@ -222,12 +221,11 @@ export default function DashboardPage() {
 									{s.title ?? "Untitled session"}
 								</p>
 								<p className="text-[11px] mt-0.5" style={{ color: "#8892A4" }}>
-									{new Date(s.createdAt).toLocaleDateString("en-US", {
+									{new Date(s.startedAt).toLocaleDateString("en-US", {
 										month: "short",
 										day: "numeric",
 									})}
-									{s.durationMinutes ? ` · ${s.durationMinutes} min` : ""}
-									{s.mood ? ` · mood ${s.mood}/5` : ""}
+									{s.moodCheckin ? ` · mood ${s.moodCheckin.score}/5` : ""}
 								</p>
 							</div>
 							<ChevronRight size={13} color="#445566" />

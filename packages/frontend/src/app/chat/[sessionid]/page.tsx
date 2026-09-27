@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Send } from "lucide-react";
 import AIMessage from "@/components/chat/AIMessage";
 import MessageBubble from "@/components/chat/MessageBubble";
+import CrisisCallout from "@/components/chat/CrisisCallout";
 import {
 	getSession,
 	sendMessage,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/api";
 
 export default function ChatPage() {
-	const { sessionId } = useParams<{ sessionId: string }>();
+	const { sessionid: sessionId } = useParams<{ sessionid: string }>();
 	const router = useRouter();
 
 	const [session, setSession] = useState<Session | null>(null);
@@ -30,13 +31,17 @@ export default function ChatPage() {
 	const [typing, setTyping] = useState(false);
 	const [ending, setEnding] = useState(false);
 	const [elapsed, setElapsed] = useState(0);
+	const ended = session?.status === "ENDED";
 
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	useEffect(() => {
 		getSession(sessionId)
-			.then(setSession)
+			.then((loadedSession) => {
+				setSession(loadedSession);
+				setMessages(loadedSession.messages ?? []);
+			})
 			.catch(() => router.push("/dashboard"));
 	}, [sessionId, router]);
 
@@ -56,7 +61,7 @@ export default function ChatPage() {
 
 	const handleSend = async () => {
 		const text = input.trim();
-		if (!text || typing) return;
+		if (!text || typing || ended || text.length > 2000) return;
 		setInput("");
 
 		const userMsg: Message = {
@@ -69,8 +74,8 @@ export default function ChatPage() {
 		setTyping(true);
 
 		try {
-			const aiMsg = await sendMessage(sessionId, text);
-			setMessages((m) => [...m, aiMsg]);
+			const result = await sendMessage(sessionId, text);
+			setMessages((m) => [...m, result.assistantMessage]);
 		} catch {
 			setMessages((m) => [
 				...m,
@@ -88,10 +93,11 @@ export default function ChatPage() {
 	};
 
 	const handleEnd = async () => {
+		if (!window.confirm("Are you sure you want to end this session?")) return;
 		setEnding(true);
 		try {
-			await endSession(sessionId);
-			router.push("/dashboard");
+			const ended = await endSession(sessionId);
+			setSession((current) => current ? { ...current, ...ended } : ended);
 		} catch {
 			setEnding(false);
 		}
@@ -136,7 +142,7 @@ export default function ChatPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					{session?.mood && (
+					{session?.moodCheckin && (
 						<span
 							className="text-[11px] px-2.5 py-1 rounded-full"
 							style={{
@@ -144,12 +150,12 @@ export default function ChatPage() {
 								color: "#8892A4",
 							}}
 						>
-							mood {session.mood}/5
+							mood {session.moodCheckin.score}/5
 						</span>
 					)}
 					<button
 						onClick={handleEnd}
-						disabled={ending}
+						disabled={ending || ended}
 						className="px-3 py-1.5 rounded-lg text-[11px] cursor-pointer border transition-opacity disabled:opacity-50"
 						style={{
 							border: "1px solid rgba(196,146,122,0.35)",
@@ -157,7 +163,7 @@ export default function ChatPage() {
 							color: "#C4927A",
 						}}
 					>
-						{ending ? "Ending..." : "End session"}
+						{ending ? "Ending..." : ended ? "Session ended" : "End session"}
 					</button>
 				</div>
 			</div>
@@ -166,7 +172,7 @@ export default function ChatPage() {
 			<div className="flex-1 overflow-y-auto py-8 flex flex-col gap-7 px-11">
 				{messages.map((m) =>
 					m.role === "assistant" ? (
-						<AIMessage key={m.id} content={m.content} />
+						<div key={m.id} className="flex flex-col gap-3"><AIMessage content={m.content} /><CrisisCallout content={m.content} /></div>
 					) : (
 						<MessageBubble key={m.id} content={m.content} />
 					),
@@ -189,6 +195,8 @@ export default function ChatPage() {
 				<div ref={bottomRef} />
 			</div>
 
+			{ended && session.summary && <section className="mx-11 mb-5 rounded-xl border border-white/10 bg-[#0D1428] p-5"><h2 className="text-sm font-semibold text-mm-text">Session summary</h2><p className="mt-2 text-sm leading-7 text-mm-muted">{session.summary}</p></section>}
+
 			{/* Input */}
 			<div
 				className="flex items-center gap-2.5 px-5 py-3.5 shrink-0"
@@ -200,6 +208,8 @@ export default function ChatPage() {
 				<textarea
 					ref={inputRef}
 					value={input}
+					maxLength={2000}
+					disabled={ended}
 					onChange={(e) => setInput(e.target.value)}
 					onKeyDown={handleKey}
 					placeholder="Share what's on your mind..."
@@ -212,9 +222,10 @@ export default function ChatPage() {
 						caretColor: "#7C9E8F",
 					}}
 				/>
+				<span className="text-[10px] text-mm-muted">{input.length}/2000</span>
 				<button
 					onClick={handleSend}
-					disabled={!input.trim() || typing}
+					disabled={!input.trim() || typing || ended}
 					aria-label="send"
 					className="w-10 h-10 rounded-full flex items-center justify-center border-0 cursor-pointer transition-opacity disabled:opacity-40 shrink-0"
 					style={{ background: "#7C9E8F" }}

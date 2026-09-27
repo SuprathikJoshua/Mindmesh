@@ -1,11 +1,12 @@
 import type { Request, Response } from "express";
-import { getUserById, syncUserService } from "../services/auth.service";
+import { getUserById, logoutUser, syncUserService } from "../services/auth.service";
 import asyncHandler from "../utils/asynchandlers";
 import ApiResponse from "../utils/ApiResponse";
 import ApiError from "../utils/ApiError";
 
-export const logout = asyncHandler(async (_req: Request, res: Response) => {
-	// Supabase client SDK manages sign-out on the frontend.
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+	const token = req.header("Authorization")?.replace("Bearer ", "");
+	if (token) await logoutUser(token);
 	res.json(new ApiResponse(200, { success: true }, "Logged out").data);
 });
 

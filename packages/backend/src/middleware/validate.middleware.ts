@@ -9,7 +9,7 @@ export const validate = (schema: z.ZodTypeAny) => {
 			const errors = (result.error as z.ZodError).issues.map(
 				(e) => `${e.path.join(".")}: ${e.message}`,
 			);
-			throw new ApiError(422, "Validation failed", errors);
+			throw new ApiError(422, "VALIDATION_ERROR", errors);
 		}
 		req.body = result.data;
 		next();

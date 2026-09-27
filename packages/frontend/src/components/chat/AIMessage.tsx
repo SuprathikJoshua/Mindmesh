@@ -2,6 +2,15 @@ interface Props {
 	content: string;
 }
 
+function renderText(content: string) {
+	return content.split("\n").map((line, index) => (
+		<span key={`${line}-${index}`}>
+			{line.replace(/\*\*(.*?)\*\*/g, "$1")}
+			{index < content.split("\n").length - 1 && <br />}
+		</span>
+	));
+}
+
 export default function AIMessage({ content }: Props) {
 	return (
 		<div className="text-center px-9">
@@ -9,7 +18,7 @@ export default function AIMessage({ content }: Props) {
 				className="text-[15px] leading-[1.9] italic"
 				style={{ color: "#8892A4", fontFamily: "var(--font-playfair)" }}
 			>
-				{content}
+				{renderText(content)}
 			</p>
 			<div
 				className="mx-auto mt-2.5 rounded-full"

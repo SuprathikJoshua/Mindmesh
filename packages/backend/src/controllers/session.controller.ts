@@ -7,6 +7,7 @@ import {
 } from "../services/session.service";
 import asyncHandler from "../utils/asynchandlers";
 import ApiResponse from "../utils/ApiResponse";
+import { log } from "console";
 
 export const createSessionHandler = asyncHandler(async (req: Request, res: Response) => {
 	const { moodScore, moodNote } = req.body;
@@ -16,6 +17,7 @@ export const createSessionHandler = asyncHandler(async (req: Request, res: Respo
 
 export const getSessionsHandler = asyncHandler(async (req: Request, res: Response) => {
 	const sessions = await getSessionList(req.userId);
+	console.log("sessions", sessions);
 	res.json(new ApiResponse(200, { sessions }).data);
 });
 
